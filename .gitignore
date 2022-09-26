@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 demofile2.txt
+
+test.py
