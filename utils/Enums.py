@@ -1,6 +1,6 @@
 from enum import Enum
 
-class AvailableDevice(Enum):
+class AvailableDevice(str, Enum):
 
     def __str__(self):
         return str(self.value)
