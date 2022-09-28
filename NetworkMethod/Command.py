@@ -18,3 +18,10 @@ class HuaweiCommand(str, Enum):
 
     showrun: str = "display current-configuration"
     copy_run_to_start: str = "save"
+
+class DellCommand(CiscoCommand):
+    
+    pass
+class ZyxelCommand(CiscoCommand):
+
+    pass

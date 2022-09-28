@@ -8,4 +8,4 @@ class AvailableDevice(str, Enum):
     cisco = "cisco_ios"
     dell = ""
     huawei = "huawei"
-    zyxel = ""
+    zyxel = "zyxel_os"
