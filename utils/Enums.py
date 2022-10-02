@@ -6,6 +6,6 @@ class AvailableDevice(str, Enum):
         return str(self.value)
 
     cisco = "cisco_ios"
-    dell = ""
+    dell = "dell_os6"
     huawei = "huawei"
     zyxel = "zyxel_os"

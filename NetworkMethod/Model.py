@@ -1,4 +1,3 @@
-from msilib.schema import File
 from pydantic import BaseModel
 from utils.Enums import AvailableDevice
 from NetworkMethod.Command import CiscoCommand, DellCommand, HuaweiCommand, ZyxelCommand
@@ -11,6 +10,8 @@ class AccessPointModel(BaseModel):
     host: str
     username: str
     password: str
+    port: int = 22
+    secret: str = ''
 
     def __parse_to_device__(self):
         device = self.__dict__
@@ -31,7 +32,7 @@ class Cisco(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file: File):
+    def UploadConfig(self, file):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
@@ -53,7 +54,7 @@ class Huawei(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file: File):
+    def UploadConfig(self, file):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
@@ -75,7 +76,7 @@ class Dell(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file: File):
+    def UploadConfig(self, file):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
@@ -97,7 +98,7 @@ class Zyxel(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file: File):
+    def UploadConfig(self, file):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
