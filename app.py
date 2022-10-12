@@ -1,10 +1,31 @@
 from ctypes import Union
-from fastapi import FastAPI
+from dataclasses import field
+from fastapi import FastAPI, File, UploadFile
 from NetworkMethod.Model import AccessPointModel, Cisco, Dell, Huawei, Zyxel
 from pydantic import parse_obj_as
 from utils.Enums import AvailableDevice
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from utils.RequestModel import UserModel
 
 app = FastAPI()
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def parse_model(access_point : AccessPointModel):
     if access_point.device_type is AvailableDevice.cisco:
@@ -41,21 +62,35 @@ async def test(access_point : AccessPointModel):
                 'error' : e
                 }
 
-@app.post("/Getconfig")
-async def create_item(access_point: AccessPointModel):
+async def create_item(user: UserModel):
     
     try:
-        point = parse_model(access_point)
+        point = parse_model(user.AccessPoint)
         
     except TypeError as e:
         return {'status' : False,
                 'error' : e
                 }
 
-    config = point.GetConfig()
-    return config
-    # f = open("demofile2.txt", "w")
-    # f.write(config)
-    # f.close()
+    filename = "demofile2.txt"
 
-    
+    config = point.GetConfig()
+    f = open(f"./AllFile/{filename}", "w")
+    f.write(config)
+    f.close()    
+
+    return filename
+
+@app.post("/GetFilePath")
+async def get_file_path(user: UserModel):
+    filename = await create_item(user)
+    # filename = "demofile2.txt"
+
+    return filename
+
+@app.get("/file/{filename}")
+async def create_file(filename: str):
+    # await create_item(access_point)
+
+    fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
+    return fileRes
