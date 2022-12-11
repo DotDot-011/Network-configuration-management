@@ -8,6 +8,9 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.RequestModel import UserModel
+import mysql.connector
+import pandas as pd
+import json
 
 app = FastAPI()
 
@@ -50,17 +53,17 @@ def parse_model(access_point : AccessPointModel):
 async def check():
     return "test"
 
-@app.post("/")
-async def test(access_point : AccessPointModel):
+# @app.post("/")
+# async def test(access_point : AccessPointModel):
     
-    try:
-        t = parse_model(access_point)
-        return t
+#     try:
+#         t = parse_model(access_point)
+#         return t
 
-    except TypeError as e:
-        return {'status' : False,
-                'error' : e
-                }
+#     except TypeError as e:
+#         return {'status' : False,
+#                 'error' : e
+#                 }
 
 async def create_item(user: UserModel):
     
@@ -94,3 +97,26 @@ async def create_file(filename: str):
 
     fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
     return fileRes
+
+@app.get("/getdb")
+async def getdata():
+    # await create_item(access_point)
+
+
+    engine = mysql.connector.connect(
+        database='students', user='root', host='thor', password='test', port='3306')
+    
+    try:
+        sql = f'''
+        SELECT * FROM students_info
+        '''
+
+        data = pd.read_sql(sql, engine)
+
+        json_data = json.loads(data.to_json(orient='index'))
+        return json_data
+
+    except Exception as e:
+        
+        engine.close()
+        return "error"

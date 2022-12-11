@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+
+  thor:
+    image: mariadb
+    volumes:
+      - ./mariadb:/var/lib/mysql
+      - ./schema:/docker-entrypoint-initdb.d/
+    ports:
+      - "8888:3306"
+    environment:
+      - TZ=Asia/Bangkok
+      - MYSQL_ROOT_PASSWORD=test
+  odin:
+    image: my-python-app
+    ports:
+      - "7000:8000"
+
+networks:
+  default:
+    name: newasgard
