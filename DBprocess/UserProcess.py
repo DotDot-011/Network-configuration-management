@@ -79,3 +79,53 @@ def createUser(userInfo: UserInfoModel):
     except Exception as e:
         engine.close()
         logging.info(e)
+
+def matchedPassword(userInfo: UserInfoModel):
+
+    engine = mysql.connector.connect(
+        **connectionConfig)
+    TableName = 'User'
+
+    hashedPassword = __hashText__(userInfo.Password)
+
+    try:
+        sql = f'''
+        SELECT * FROM {TableName} WHERE username = '{userInfo.Username}' AND userPassword = '{hashedPassword}'
+        '''
+
+        data = pd.read_sql(sql, engine)
+
+        engine.close()
+
+        return not data.empty
+
+    except Exception as e:
+        engine.close()
+        logging.info(e)
+
+def updateToken(userInfo: UserInfoModel, token: str):
+    
+    engine = mysql.connector.connect(
+    **connectionConfig)
+    TableName = 'User'
+
+    try:
+        sql = f'''
+        UPDATE {TableName}
+        SET token = %s, lastLogin = now()
+        WHERE username = %s;
+        '''
+        
+        rs = engine.cursor().execute(sql,
+                                     (
+                                        token,
+                                        userInfo.Username
+                                      )
+                                     )
+
+        engine.commit()
+        engine.close()
+
+    except Exception as e:
+        engine.close()
+        logging.info(e)

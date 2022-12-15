@@ -6,7 +6,7 @@ from pydantic import parse_obj_as
 from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from DBprocess.UserProcess import IsUsernameExist, createUser
+from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, matchedPassword
 from utils.RequestModel import UserModel, UserInfoModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage
 import logging
@@ -133,5 +133,41 @@ async def register(userInfo : UserInfoModel):
         return makeCorrectResponsePackage({"isSuccess": True, "message": "Created User"})
     
     except Exception as e:
-        return e
+        return makeFailResponsePackage(e.__str__()) 
     
+@app.post("/login")
+async def login(userInfo : UserInfoModel):
+    
+    try:
+        if not IsUsernameExist(userInfo.Username):
+
+            return makeCorrectResponsePackage({"isSuccess": False, "message" : "This username is not exist"})
+        
+        logging.info("Username exist")
+
+        if not matchedPassword(userInfo):
+            
+            return makeCorrectResponsePackage({"isSuccess": False, "message" : "Password incorrect"})
+
+        logging.info("Password is matched")
+
+        token = GenerateToken(userInfo.Username)
+
+        logging.info(f"Generate token {token}")
+        
+        updateToken(userInfo, token)
+
+        logging.info(f"Update token success")
+        
+        return makeCorrectResponsePackage({"isSuccess": True, "token": token})
+
+    except Exception as e:
+        return makeFailResponsePackage(e.__str__()) 
+
+if __name__ == "__main__":
+    
+    try :
+        print(GenerateToken("admin"))
+    
+    except Exception as e:
+        print(e.__str__())
