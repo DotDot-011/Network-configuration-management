@@ -5,11 +5,11 @@ from utils.Enums import AvailableDevice
 
 database = 'ConfigService'
 user = 'root'
-# host = 'thor'
-host = '127.0.0.1'
+host = 'thor'
+# host = '127.0.0.1'
 password = 'test'
-# port = '3306'
-port = '8888'
+port = '3306'
+# port = '8888'
 
 connectionConfig = {
                     'database': database, 
@@ -85,6 +85,6 @@ def GetFile(fileId: int):
     except Exception as e:
         
         engine.close()
-        return "error"
+        raise e
 
 # rint(getdata()File

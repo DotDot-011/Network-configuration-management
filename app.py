@@ -6,10 +6,20 @@ from pydantic import parse_obj_as
 from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-
-from utils.RequestModel import UserModel
+from DBprocess.UserProcess import IsUsernameExist, createUser
+from utils.RequestModel import UserModel, UserInfoModel
+from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage
+import logging
+import jwt
+import datetime
 
 app = FastAPI()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -26,6 +36,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def GenerateToken(username: str):
+    # define the payload for the JWT
+    payload = {
+        "user": username,  # issuer
+        "iat": datetime.datetime.utcnow(),  # issued at time
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1),  # expiration time
+    }
+
+    # generate the JWT
+    jwt_token = jwt.encode(payload, "secret", algorithm="HS256")
+
+    # print the JWT
+    return jwt_token
 
 def parse_model(access_point : AccessPointModel):
     if access_point.device_type is AvailableDevice.cisco:
@@ -94,3 +118,20 @@ async def create_file(filename: str):
 
     fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
     return fileRes
+
+@app.post("/register")
+async def register(userInfo : UserInfoModel):
+    
+    try:
+        logging.info(IsUsernameExist(userInfo.Username))
+        if IsUsernameExist(userInfo.Username): 
+            
+            return makeCorrectResponsePackage({"isSuccess": False, "message": "This username have been used"})
+        
+        createUser(userInfo)
+
+        return makeCorrectResponsePackage({"isSuccess": True, "message": "Created User"})
+    
+    except Exception as e:
+        return e
+    

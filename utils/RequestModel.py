@@ -7,3 +7,8 @@ class UserModel(BaseModel):
     
     AccessPoint : AccessPointModel
     Repository : str
+
+class UserInfoModel(BaseModel):
+
+    Username : str
+    Password : str
