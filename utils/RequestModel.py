@@ -12,3 +12,11 @@ class UserInfoModel(BaseModel):
 
     Username : str
     Password : str
+
+class RepositoryInfoModel(BaseModel):
+
+    repositoryName : str
+    userId : int
+    Host : str
+    DeviceType : AccessPointModel
+    token : str

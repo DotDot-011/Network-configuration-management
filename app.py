@@ -6,12 +6,14 @@ from pydantic import parse_obj_as
 from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, matchedPassword
+from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo
 from utils.RequestModel import UserModel, UserInfoModel
-from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage
+from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText
 import logging
 import jwt
 import datetime
+import hashlib
+import json
 
 app = FastAPI()
 
@@ -69,6 +71,12 @@ def parse_model(access_point : AccessPointModel):
         return parse_obj_as(Zyxel, access_point)
 
     raise TypeError
+
+
+
+def matchedPassword(password, hashedPassword):
+
+    return hashText(password) == hashedPassword    
 
 @app.get("/test")
 async def check():
@@ -145,7 +153,9 @@ async def login(userInfo : UserInfoModel):
         
         logging.info("Username exist")
 
-        if not matchedPassword(userInfo):
+        user = getUserInfo(userInfo.Username)
+
+        if not matchedPassword(userInfo.Password, user["userPassword"]):
             
             return makeCorrectResponsePackage({"isSuccess": False, "message" : "Password incorrect"})
 
@@ -158,11 +168,18 @@ async def login(userInfo : UserInfoModel):
         updateToken(userInfo, token)
 
         logging.info(f"Update token success")
+        logging.info(user)
         
-        return makeCorrectResponsePackage({"isSuccess": True, "token": token})
+        user.update({"isSuccess": True, "token": token})
+
+        return makeCorrectResponsePackage(user)
 
     except Exception as e:
         return makeFailResponsePackage(e.__str__()) 
+
+@app.post("/craeteRepository")
+async def createRepository():
+    pass
 
 if __name__ == "__main__":
     

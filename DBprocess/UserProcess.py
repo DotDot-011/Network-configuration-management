@@ -2,8 +2,8 @@ import mysql.connector
 import pandas as pd
 import json
 from utils.RequestModel import UserInfoModel
-import hashlib
 import logging
+from utils.Convertor import hashText
 
 database = 'ConfigService'
 user = 'root'
@@ -20,16 +20,6 @@ connectionConfig = {
                     'password': password, 
                     'port': port
                     }
-
-def __hashText__(text):
-    """
-        Basic hashing function for a text using random unique salt.  
-    """
-
-    with open("config/hash.json") as hash_file:
-        hash = json.load(hash_file)
-    salt = hash['salt']
-    return hashlib.sha256(salt.encode() + text.encode()).hexdigest()
 
 def IsUsernameExist(username: str):
     
@@ -58,7 +48,7 @@ def createUser(userInfo: UserInfoModel):
     **connectionConfig)
     TableName = 'User'
 
-    hashedPassword = __hashText__(userInfo.Password)
+    hashedPassword = hashText(userInfo.Password)
 
     try:
         sql = f'''
@@ -75,29 +65,6 @@ def createUser(userInfo: UserInfoModel):
 
         engine.commit()
         engine.close()
-
-    except Exception as e:
-        engine.close()
-        logging.info(e)
-
-def matchedPassword(userInfo: UserInfoModel):
-
-    engine = mysql.connector.connect(
-        **connectionConfig)
-    TableName = 'User'
-
-    hashedPassword = __hashText__(userInfo.Password)
-
-    try:
-        sql = f'''
-        SELECT * FROM {TableName} WHERE username = '{userInfo.Username}' AND userPassword = '{hashedPassword}'
-        '''
-
-        data = pd.read_sql(sql, engine)
-
-        engine.close()
-
-        return not data.empty
 
     except Exception as e:
         engine.close()
@@ -125,6 +92,29 @@ def updateToken(userInfo: UserInfoModel, token: str):
 
         engine.commit()
         engine.close()
+
+    except Exception as e:
+        engine.close()
+        logging.info(e)
+
+def getUserInfo(username: str):
+
+    engine = mysql.connector.connect(
+        **connectionConfig)
+    TableName = 'User'
+
+    try:
+        sql = f'''
+        SELECT * FROM {TableName} WHERE username = '{username}'
+        '''
+
+        data = pd.read_sql(sql, engine)
+
+        engine.close()
+
+        json_data = json.loads(data.to_json(orient='index'))['0']
+
+        return json_data
 
     except Exception as e:
         engine.close()
