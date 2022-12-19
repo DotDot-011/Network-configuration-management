@@ -58,7 +58,7 @@ def createUser(userInfo: UserInfoModel):
         
         rs = engine.cursor().execute(sql,
                                      (
-                                        userInfo.Username,
+                                        userInfo.username,
                                         hashedPassword,
                                       )
                                      )
@@ -86,7 +86,7 @@ def updateToken(userInfo: UserInfoModel, token: str):
         rs = engine.cursor().execute(sql,
                                      (
                                         token,
-                                        userInfo.Username
+                                        userInfo.username
                                       )
                                      )
 
@@ -118,4 +118,18 @@ def getUserInfo(username: str):
 
     except Exception as e:
         engine.close()
-        logging.info(e)
+        logging.info(e.__str__())
+        
+        raise e
+
+def isTokenCorrect(token: str, username: str):
+    
+    try:
+        userInfo = getUserInfo(username)
+
+    except Exception as e:
+        logging.info(e.__str__())
+
+        raise e
+
+    return userInfo.token == token

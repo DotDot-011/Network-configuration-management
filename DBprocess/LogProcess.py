@@ -20,25 +20,25 @@ connectionConfig = {
                     'password': password, 
                     'port': port
                     }
-
-def createRepository(RepoInfo: RepositoryInfoModel):
+                    
+def createLog(username: str, method: str, response: str, repositoryId = None):
     
     engine = mysql.connector.connect(
     **connectionConfig)
-    TableName = 'Repository'
+    TableName = 'APILog'
 
     try:
         sql = f'''
-        INSERT INTO {TableName} (repositoryName, repositoryOwnerName, repositoryHost, repositoryDeviceType, repositoryTimestamp)
+        INSERT INTO {TableName} (username, repositoryId, method, response, logTimestamp)
         VALUES (%s, %s, %s, %s, now())
         '''
         
         rs = engine.cursor().execute(sql,
                                      (
-                                        RepoInfo.repositoryName,
-                                        RepoInfo.username,
-                                        RepoInfo.Host,
-                                        RepoInfo.DeviceType,
+                                        username,
+                                        repositoryId,
+                                        method,
+                                        response,
                                       )
                                      )
 

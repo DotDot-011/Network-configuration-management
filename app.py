@@ -1,19 +1,19 @@
 from ctypes import Union
 from dataclasses import field
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Header, status, Response
 from NetworkMethod.Model import AccessPointModel, Cisco, Dell, Huawei, Zyxel
 from pydantic import parse_obj_as
 from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo
-from utils.RequestModel import UserModel, UserInfoModel
+from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
+from DBprocess.RepositoryProcess import createRepository
+from DBprocess.LogProcess import createLog
+from utils.RequestModel import UserModel, UserInfoModel, RepositoryInfoModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText
 import logging
 import jwt
 import datetime
-import hashlib
-import json
 
 app = FastAPI()
 
@@ -72,6 +72,20 @@ def parse_model(access_point : AccessPointModel):
 
     raise TypeError
 
+def isTokenValid(token):
+    
+    if token is None:
+        return False
+
+    payload = jwt.decode(token, "secret", algorithms=["HS256"])
+
+    if payload.exp > datetime.datetime.utcnow():
+        return False
+
+    if not isTokenCorrect(token, payload.user):
+        return False
+
+    return True
 
 
 def matchedPassword(password, hashedPassword):
@@ -128,58 +142,110 @@ async def create_file(filename: str):
     return fileRes
 
 @app.post("/register")
-async def register(userInfo : UserInfoModel):
+async def register(userInfo : UserInfoModel, response: Response):
     
     try:
-        logging.info(IsUsernameExist(userInfo.Username))
-        if IsUsernameExist(userInfo.Username): 
+        logging.info(IsUsernameExist(userInfo.username))
+        if IsUsernameExist(userInfo.username): 
             
+            createLog(username=userInfo.username, 
+            method='register', 
+            response=makeCorrectResponsePackage({"isSuccess": False, "message": "This username have been used"}).__str__(),
+            )
+
             return makeCorrectResponsePackage({"isSuccess": False, "message": "This username have been used"})
         
         createUser(userInfo)
 
+        createLog(username=userInfo.username, 
+        method='register', 
+        response=makeCorrectResponsePackage({"isSuccess": True, "message": "Created User"}).__str__(),
+        )
+        
         return makeCorrectResponsePackage({"isSuccess": True, "message": "Created User"})
     
     except Exception as e:
+        createLog(username=userInfo.username, 
+            method='register', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
         return makeFailResponsePackage(e.__str__()) 
     
 @app.post("/login")
-async def login(userInfo : UserInfoModel):
+async def login(userInfo : UserInfoModel, response: Response):
     
     try:
-        if not IsUsernameExist(userInfo.Username):
+        if not IsUsernameExist(userInfo.username):
 
             return makeCorrectResponsePackage({"isSuccess": False, "message" : "This username is not exist"})
         
         logging.info("Username exist")
-
-        user = getUserInfo(userInfo.Username)
+        user = getUserInfo(userInfo.username)
 
         if not matchedPassword(userInfo.Password, user["userPassword"]):
             
+            createLog(username=userInfo.username, 
+            method='login', 
+            response=makeCorrectResponsePackage({"isSuccess": False, "message" : "Password incorrect"}).__str__(),
+            )
+
             return makeCorrectResponsePackage({"isSuccess": False, "message" : "Password incorrect"})
 
         logging.info("Password is matched")
 
-        token = GenerateToken(userInfo.Username)
+        token = GenerateToken(userInfo.username)
 
         logging.info(f"Generate token {token}")
-        
         updateToken(userInfo, token)
-
         logging.info(f"Update token success")
-        logging.info(user)
-        
-        user.update({"isSuccess": True, "token": token})
 
-        return makeCorrectResponsePackage(user)
+        createLog(username=userInfo.username, 
+            method='login', 
+            response=makeCorrectResponsePackage({"isSuccess": True, "token": token}).__str__(),
+            )
+        
+        return makeCorrectResponsePackage({"isSuccess": True, "token": token})
 
     except Exception as e:
+        createLog(username=userInfo.username, 
+            method='login', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
         return makeFailResponsePackage(e.__str__()) 
 
-@app.post("/craeteRepository")
-async def createRepository():
-    pass
+@app.post("/createRepository")
+async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if isTokenValid(TOKEN):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=RepositoryInfoModel.username, 
+            method='createRepository', 
+            response=makeCorrectResponsePackage({"isSuccess": False, "message" : "TOKEN invalid"}).__str__(),
+            )
+
+        return makeCorrectResponsePackage({"isSuccess": False, "message" : "TOKEN invalid"})
+
+    try :
+        createRepository(RepoInfo)
+
+        createLog(username=RepositoryInfoModel.username, 
+            method='createRepository', 
+            response=makeCorrectResponsePackage({"isSuccess": True, "message" : "created Repository"}).__str__(),
+            )
+
+        return makeCorrectResponsePackage({"isSuccess": True, "message" : "created Repository"})
+    
+    except Exception as e:
+        createLog(username=RepositoryInfoModel.username, 
+            method='createRepository', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
 
 if __name__ == "__main__":
     
