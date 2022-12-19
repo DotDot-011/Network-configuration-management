@@ -77,7 +77,11 @@ def isTokenValid(token):
     if token is None:
         return False
 
-    payload = jwt.decode(token, "secret", algorithms=["HS256"])
+    try :
+        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+
+    except: 
+        return False
 
     if payload.exp > datetime.datetime.utcnow():
         return False
