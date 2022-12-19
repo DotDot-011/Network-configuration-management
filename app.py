@@ -7,7 +7,7 @@ from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
-from DBprocess.RepositoryProcess import createRepository
+from DBprocess.RepositoryProcess import createRepository, queryRepositories
 from DBprocess.LogProcess import createLog
 from utils.RequestModel import UserModel, UserInfoModel, RepositoryInfoModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText
@@ -72,7 +72,7 @@ def parse_model(access_point : AccessPointModel):
 
     raise TypeError
 
-def isTokenValid(token):
+def isTokenValid(token, username):
     
     if token is None:
         return False
@@ -81,6 +81,9 @@ def isTokenValid(token):
         payload = jwt.decode(token, "secret", algorithms=["HS256"])
 
     except: 
+        return False
+
+    if payload.user != username:
         return False
 
     if payload.exp > datetime.datetime.utcnow():
@@ -222,16 +225,16 @@ async def login(userInfo : UserInfoModel, response: Response):
 @app.post("/createRepository")
 async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
     
-    if isTokenValid(TOKEN):
+    if not isTokenValid(TOKEN, RepositoryInfoModel.username):
         
         response.status_code = status.HTTP_401_UNAUTHORIZED
 
         createLog(username=RepositoryInfoModel.username, 
             method='createRepository', 
-            response=makeCorrectResponsePackage({"isSuccess": False, "message" : "TOKEN invalid"}).__str__(),
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
             )
 
-        return makeCorrectResponsePackage({"isSuccess": False, "message" : "TOKEN invalid"})
+        return makeFailResponsePackage("TOKEN invalid")
 
     try :
         createRepository(RepoInfo)
@@ -246,6 +249,38 @@ async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TO
     except Exception as e:
         createLog(username=RepositoryInfoModel.username, 
             method='createRepository', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.get("/getRepositories/{username}")
+async def getRepositories(username: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=username, 
+            method='getRepositories', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+    
+    try: 
+        Repositories = queryRepositories(username)
+
+        createLog(username=username, 
+            method='getRepositories', 
+            response=makeCorrectResponsePackage(Repositories).__str__(),
+            )
+
+        return makeCorrectResponsePackage(Repositories)
+    
+    except Exception as e:
+        createLog(username=RepositoryInfoModel.username, 
+            method='getRepositories', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 

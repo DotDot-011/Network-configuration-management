@@ -48,3 +48,25 @@ def createRepository(RepoInfo: RepositoryInfoModel):
     except Exception as e:
         engine.close()
         logging.info(e)
+
+def queryRepositories(username: str):
+
+    engine = mysql.connector.connect(
+    **connectionConfig)
+    TableName = 'Repository'
+
+    try:
+        sql = f'''
+        SELECT * FROM {TableName} WHERE repositoryOwnerName = '{username}'
+        '''
+
+        data = pd.read_sql(sql, engine)
+        json_data = json.loads(data.to_json(orient='index'))
+
+        engine.close()
+
+        return json_data
+
+    except Exception as e:
+        engine.close()
+        logging.info(e)
