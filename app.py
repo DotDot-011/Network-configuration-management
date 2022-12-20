@@ -1,4 +1,4 @@
-from ctypes import Union
+from typing import Union
 from dataclasses import field
 from fastapi import FastAPI, File, UploadFile, Header, status, Response
 from NetworkMethod.Model import AccessPointModel, Cisco, Dell, Huawei, Zyxel
@@ -7,7 +7,7 @@ from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
-from DBprocess.RepositoryProcess import createRepository, queryRepositories
+from DBprocess.RepositoryProcess import insertRepository, queryRepositories
 from DBprocess.LogProcess import createLog
 from utils.RequestModel import UserModel, UserInfoModel, RepositoryInfoModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText
@@ -75,21 +75,32 @@ def parse_model(access_point : AccessPointModel):
 def isTokenValid(token, username):
     
     if token is None:
+
+        logging.info("There is no token")
+
         return False
 
     try :
         payload = jwt.decode(token, "secret", algorithms=["HS256"])
 
     except: 
+        logging.info("Token format not correct")
+
         return False
 
-    if payload.user != username:
+    if payload["user"] != username:
+        logging.info("Token username not correct")
+
         return False
 
-    if payload.exp > datetime.datetime.utcnow():
+    if datetime.datetime.fromtimestamp(payload["exp"]) < datetime.datetime.utcnow():
+        logging.info("Token expired")
+
         return False
 
-    if not isTokenCorrect(token, payload.user):
+    if not isTokenCorrect(token, payload["user"]):
+        logging.info("Token unregis")
+
         return False
 
     return True
@@ -225,11 +236,11 @@ async def login(userInfo : UserInfoModel, response: Response):
 @app.post("/createRepository")
 async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
     
-    if not isTokenValid(TOKEN, RepositoryInfoModel.username):
+    if not isTokenValid(TOKEN, RepoInfo.username):
         
         response.status_code = status.HTTP_401_UNAUTHORIZED
 
-        createLog(username=RepositoryInfoModel.username, 
+        createLog(username=RepoInfo.username, 
             method='createRepository', 
             response=makeFailResponsePackage("TOKEN invalid").__str__(),
             )
@@ -237,9 +248,9 @@ async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TO
         return makeFailResponsePackage("TOKEN invalid")
 
     try :
-        createRepository(RepoInfo)
+        insertRepository(RepoInfo)
 
-        createLog(username=RepositoryInfoModel.username, 
+        createLog(username=RepoInfo.username, 
             method='createRepository', 
             response=makeCorrectResponsePackage({"isSuccess": True, "message" : "created Repository"}).__str__(),
             )
@@ -247,7 +258,7 @@ async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TO
         return makeCorrectResponsePackage({"isSuccess": True, "message" : "created Repository"})
     
     except Exception as e:
-        createLog(username=RepositoryInfoModel.username, 
+        createLog(username=RepoInfo.username, 
             method='createRepository', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
@@ -279,7 +290,7 @@ async def getRepositories(username: str, response: Response, TOKEN: Union[str, N
         return makeCorrectResponsePackage(Repositories)
     
     except Exception as e:
-        createLog(username=RepositoryInfoModel.username, 
+        createLog(username=username, 
             method='getRepositories', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )

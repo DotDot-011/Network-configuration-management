@@ -2,6 +2,7 @@ from fileinput import filename
 import string
 from pydantic import BaseModel
 from NetworkMethod.Model import AccessPointModel
+from utils.Enums import AvailableDevice
 
 class UserModel(BaseModel):
     
@@ -16,6 +17,6 @@ class UserInfoModel(BaseModel):
 class RepositoryInfoModel(BaseModel):
 
     repositoryName : str
-    username : int
+    username : str
     Host : str
-    DeviceType : AccessPointModel
+    DeviceType : AvailableDevice

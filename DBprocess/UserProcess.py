@@ -132,4 +132,4 @@ def isTokenCorrect(token: str, username: str):
 
         raise e
 
-    return userInfo.token == token
+    return userInfo["token"] == token

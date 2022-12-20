@@ -21,7 +21,7 @@ connectionConfig = {
                     'port': port
                     }
 
-def createRepository(RepoInfo: RepositoryInfoModel):
+def insertRepository(RepoInfo: RepositoryInfoModel):
     
     engine = mysql.connector.connect(
     **connectionConfig)
