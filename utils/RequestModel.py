@@ -4,10 +4,17 @@ from pydantic import BaseModel
 from NetworkMethod.Model import AccessPointModel
 from utils.Enums import AvailableDevice
 
-class UserModel(BaseModel):
+class HostModel(BaseModel):
     
     AccessPoint : AccessPointModel
+    username : str
     Repository : str
+
+class FileModel(BaseModel):
+
+    name: str
+    data: str
+    fileType: AvailableDevice
 
 class UserInfoModel(BaseModel):
 

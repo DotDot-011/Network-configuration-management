@@ -32,11 +32,11 @@ class Cisco(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file):
+    def UploadConfig(self, commands):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
-            output = net_connect.send_config_from_file(file)
+            output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
@@ -54,11 +54,11 @@ class Huawei(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file):
+    def UploadConfig(self, commands):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
-            output = net_connect.send_config_from_file(file)
+            output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
@@ -76,11 +76,11 @@ class Dell(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file):
+    def UploadConfig(self, commands):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
-            output = net_connect.send_config_from_file(file)
+            output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
@@ -98,11 +98,11 @@ class Zyxel(AccessPointModel):
     
         return output
 
-    def UploadConfig(self, file):
+    def UploadConfig(self, commands):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
-            output = net_connect.send_config_from_file(file)
+            output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     

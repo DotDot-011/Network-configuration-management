@@ -19,9 +19,9 @@ connectionConfig = {
                     'port': port
                     }
 
-def UploadFile(
+def uploadFile(
                 fileName: str,
-                userId: int,
+                userName: str,
                 data: str,
                 fileType: AvailableDevice,
                 fileRepositoryId: int,
@@ -35,7 +35,7 @@ def UploadFile(
     
     try:
         sql = f'''
-        INSERT  INTO {TableName} (fileOwnerId, 
+        INSERT  INTO {TableName} (fileOwnerName, 
                                     fileName, 
                                     fileType, 
                                     fileRepositoryId, 
@@ -48,7 +48,7 @@ def UploadFile(
 
         rs = engine.cursor().execute(sql,
                                      (
-                                        userId,
+                                        userName,
                                         fileName,
                                         fileType,
                                         fileRepositoryId,

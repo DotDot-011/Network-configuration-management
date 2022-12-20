@@ -9,8 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
 from DBprocess.RepositoryProcess import insertRepository, queryRepositories
 from DBprocess.LogProcess import createLog
-from utils.RequestModel import UserModel, UserInfoModel, RepositoryInfoModel
-from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText
+from DBprocess.FileProcess import uploadFile
+from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel
+from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText, textToCommands
 import logging
 import jwt
 import datetime
@@ -158,6 +159,77 @@ async def create_file(filename: str):
 
     fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
     return fileRes
+
+@app.post("/uploadConfig")
+async def uploadConfig(file: FileModel, hostObject: HostModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, hostObject.username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=hostObject.username, 
+            method='getConfig', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+
+    try:
+        accessPoint = parse_model(hostObject.AccessPoint)
+        oldConfig = accessPoint.GetConfig()
+        oldCommands = textToCommands(oldConfig)
+
+        commands = textToCommands(file.data)
+        accessPoint.UploadConfig(commands)
+        
+        try: 
+
+            uploadFile(filename=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
+
+        except Exception as e:
+            
+            accessPoint.UploadConfig(oldCommands)
+            
+            raise e
+        
+        return makeCorrectResponsePackage("upload complete")
+
+    except Exception as e:
+        createLog(username=hostObject.username, 
+            method='getConfig', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.post("/getConfig")
+async def getConfig(hostObject: HostModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+
+    if not isTokenValid(TOKEN, hostObject.username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=hostObject.username, 
+            method='getConfig', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+
+    try:
+        accessPoint = parse_model(hostObject.AccessPoint)
+
+        config = accessPoint.GetConfig()
+
+        return makeCorrectResponsePackage(config)
+
+    except Exception as e:
+        createLog(username=hostObject.username, 
+            method='getConfig', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
 
 @app.post("/register")
 async def register(userInfo : UserInfoModel, response: Response):
