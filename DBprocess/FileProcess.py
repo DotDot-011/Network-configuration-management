@@ -1,6 +1,7 @@
 import mysql.connector
 import pandas as pd
 import json
+import logging
 from utils.Enums import AvailableDevice
 
 database = 'ConfigService'
@@ -95,11 +96,11 @@ def listFileName(repository: str):
 
     try:
         sql = f'''
-        SELECT fileName FROM {TableName} WHERE fileRepositoryId = {repository}
+        SELECT fileId, fileName FROM {TableName} WHERE fileRepositoryId = {repository}
         '''
 
         data = pd.read_sql(sql, engine)
-        fileNames = data['fileName'].values.tolist()
+        fileNames = json.loads(data.to_json(orient = 'records'))
 
         return fileNames
 
