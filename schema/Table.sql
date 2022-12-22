@@ -24,7 +24,7 @@ create Table if not exists `Repository`
 create Table if not exists `File`
 (
 	fileId bigint primary key AUTO_INCREMENT,
-    fileOwnerName int,
+    fileOwnerName ,
     fileName varchar(64),
     fileType varchar(16),
     fileRepositoryId int,

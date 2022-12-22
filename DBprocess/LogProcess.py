@@ -48,3 +48,5 @@ def createLog(username: str, method: str, response: str, repositoryId = None):
     except Exception as e:
         engine.close()
         logging.info(e)
+
+        raise e

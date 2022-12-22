@@ -38,7 +38,7 @@ def insertRepository(RepoInfo: RepositoryInfoModel):
                                         RepoInfo.repositoryName,
                                         RepoInfo.username,
                                         RepoInfo.Host,
-                                        RepoInfo.DeviceType,
+                                        RepoInfo.DeviceType.value,
                                       )
                                      )
 
@@ -48,6 +48,8 @@ def insertRepository(RepoInfo: RepositoryInfoModel):
     except Exception as e:
         engine.close()
         logging.info(e)
+        
+        raise e
 
 def queryRepositories(username: str):
 
@@ -70,3 +72,5 @@ def queryRepositories(username: str):
     except Exception as e:
         engine.close()
         logging.info(e)
+
+        raise e

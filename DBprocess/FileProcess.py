@@ -50,7 +50,7 @@ def uploadFile(
                                      (
                                         userName,
                                         fileName,
-                                        fileType,
+                                        fileType.value,
                                         fileRepositoryId,
                                         data
                                       )
@@ -64,9 +64,9 @@ def uploadFile(
     except Exception as e:
         
         engine.close()
-        return e
+        raise e
 
-def GetFile(fileId: int):
+def queryFile(fileId: int):
     
     engine = mysql.connector.connect(
         **connectionConfig)
@@ -81,6 +81,27 @@ def GetFile(fileId: int):
 
         json_data = json.loads(data.to_json(orient='index'))['0']
         return json_data
+
+    except Exception as e:
+        
+        engine.close()
+        raise e
+
+def listFileName(repository: str):
+
+    engine = mysql.connector.connect(
+        **connectionConfig)
+    TableName = 'File'
+
+    try:
+        sql = f'''
+        SELECT fileName FROM {TableName} WHERE fileRepositoryId = {repository}
+        '''
+
+        data = pd.read_sql(sql, engine)
+        fileNames = data['fileName'].values.tolist()
+
+        return fileNames
 
     except Exception as e:
         

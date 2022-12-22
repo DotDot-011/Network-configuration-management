@@ -41,6 +41,8 @@ def IsUsernameExist(username: str):
     except Exception as e:
         engine.close()
         logging.info(e)
+        
+        raise e
 
 def createUser(userInfo: UserInfoModel):
     
@@ -70,6 +72,8 @@ def createUser(userInfo: UserInfoModel):
         engine.close()
         logging.info(e)
 
+        raise e
+
 def updateToken(userInfo: UserInfoModel, token: str):
     
     engine = mysql.connector.connect(
@@ -96,6 +100,8 @@ def updateToken(userInfo: UserInfoModel, token: str):
     except Exception as e:
         engine.close()
         logging.info(e)
+
+        raise e
 
 def getUserInfo(username: str):
 

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
 from DBprocess.RepositoryProcess import insertRepository, queryRepositories
 from DBprocess.LogProcess import createLog
-from DBprocess.FileProcess import uploadFile
+from DBprocess.FileProcess import uploadFile, listFileName, queryFile
 from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText, textToCommands
 import logging
@@ -127,38 +127,119 @@ async def check():
 #                 'error' : e
 #                 }
 
-async def create_item(user: UserModel):
+# async def create_item(user: UserModel):
     
-    try:
-        point = parse_model(user.AccessPoint)
+#     try:
+#         point = parse_model(user.AccessPoint)
         
-    except TypeError as e:
-        return {'status' : False,
-                'error' : e
-                }
+#     except TypeError as e:
+#         return {'status' : False,
+#                 'error' : e
+#                 }
 
-    filename = "demofile2.txt"
+#     filename = "demofile2.txt"
 
-    config = point.GetConfig()
-    f = open(f"./AllFile/{filename}", "w")
-    f.write(config)
-    f.close()    
+#     config = point.GetConfig()
+#     f = open(f"./AllFile/{filename}", "w")
+#     f.write(config)
+#     f.close()    
 
-    return filename
+#     return filename
 
-@app.post("/GetFilePath")
-async def get_file_path(user: UserModel):
-    filename = await create_item(user)
-    # filename = "demofile2.txt"
+# @app.post("/GetFilePath")
+# async def get_file_path(user: UserModel):
+#     filename = await create_item(user)
+#     # filename = "demofile2.txt"
 
-    return filename
+#     return filename
 
-@app.get("/file/{filename}")
-async def create_file(filename: str):
-    # await create_item(access_point)
+# @app.get("/file/{filename}")
+# async def create_file(filename: str):
+#     # await create_item(access_point)
 
-    fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
-    return fileRes
+#     fileRes = FileResponse(path=f"./AllFile/{filename}", media_type='text/mp4')
+#     return fileRes
+
+@app.get("/getFile/{username}/{fileId}")
+async def getFile(username: str, fileId: int, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=username, 
+            method='getFile', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+
+    try:
+        file = queryFile(fileId)
+
+        return makeCorrectResponsePackage(file)
+
+    except Exception as e:
+        createLog(username=username, 
+            method='getFile', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.get("/getFileNames/{username}/{repository}")
+async def getFileNames(username: str, repository: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=username, 
+            method='getFileNames', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+
+    try:
+        fileNames = listFileName(repository)
+
+        return makeCorrectResponsePackage(fileNames)
+
+    except Exception as e:
+        createLog(username=username, 
+            method='getFileNames', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.post("/saveConfig")
+async def uploadConfig(file: FileModel, hostObject: HostModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, hostObject.username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=hostObject.username, 
+            method='saveConfig', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+
+    try:
+        uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
+        
+        return makeCorrectResponsePackage("save complete")
+
+    except Exception as e:
+        createLog(username=hostObject.username, 
+            method='saveConfig', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
 
 @app.post("/uploadConfig")
 async def uploadConfig(file: FileModel, hostObject: HostModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
@@ -184,7 +265,7 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
         
         try: 
 
-            uploadFile(filename=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
+            uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
 
         except Exception as e:
             

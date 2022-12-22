@@ -8,7 +8,7 @@ class HostModel(BaseModel):
     
     AccessPoint : AccessPointModel
     username : str
-    Repository : str
+    Repository : int
 
 class FileModel(BaseModel):
 
