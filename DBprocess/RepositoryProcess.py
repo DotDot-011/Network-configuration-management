@@ -63,7 +63,7 @@ def queryRepositories(username: str):
         '''
 
         data = pd.read_sql(sql, engine)
-        json_data = json.loads(data.to_json(orient='index'))
+        json_data = json.loads(data.to_json(orient='records'))
 
         engine.close()
 

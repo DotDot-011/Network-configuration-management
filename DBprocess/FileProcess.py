@@ -96,7 +96,7 @@ def listFileName(repository: str):
 
     try:
         sql = f'''
-        SELECT fileId, fileName FROM {TableName} WHERE fileRepositoryId = {repository}
+        SELECT fileId, fileName, fileTimestamp FROM {TableName} WHERE fileRepositoryId = {repository}
         '''
 
         data = pd.read_sql(sql, engine)
