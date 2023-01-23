@@ -10,6 +10,7 @@ class CiscoCommand(str, Enum):
     showstart: str = "show startup-config"
     copy_run_to_start: str = "copy running-config startup-config"
     copy_start_to_run: str = "copy startup-config running-config"
+    showversion: str = "show version"
 
 class HuaweiCommand(str, Enum):
 

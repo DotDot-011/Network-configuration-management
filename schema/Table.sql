@@ -18,7 +18,7 @@ create Table if not exists `Repository`
     repositoryHost varchar(16),
     repositoryDeviceType varchar(16),
     repositoryTimestamp datetime,
-    IsSnmpEnable BIT,
+    IsSnmpEnable Boolean,
     SnmpCommunity varchar(64)
 
 );

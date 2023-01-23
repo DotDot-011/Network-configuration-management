@@ -7,7 +7,7 @@ from utils.Enums import AvailableDevice
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getUserInfo, isTokenCorrect
-from DBprocess.RepositoryProcess import insertRepository, queryRepositories
+from DBprocess.RepositoryProcess import insertRepository, queryRepositories, updateEnableSnmp
 from DBprocess.LogProcess import createLog
 from DBprocess.FileProcess import uploadFile, listFileName, queryFile
 from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel
@@ -20,7 +20,8 @@ from ccat import AnalyzeFile
 app = FastAPI()
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
+    filemode='a',
     format='%(asctime)s %(levelname)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     filename='Server.log'
@@ -264,7 +265,8 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
 
         commands = textToCommands(file.data)
         accessPoint.UploadConfig(commands)
-        
+        accessPoint.CopyRunToStartup()
+
         try: 
 
             uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
@@ -272,6 +274,7 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
         except Exception as e:
             
             accessPoint.UploadConfig(oldCommands)
+            accessPoint.CopyRunToStartup()
             
             raise e
         
@@ -468,6 +471,83 @@ async def AnalyzeConfig(username: str, config: str, response: Response, TOKEN: U
     except Exception as e:
         createLog(username=username, 
             method='AnalyzeConfig', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.put("/EnableSnmp")
+async def EnableSnmp(username: str, repositoriyId: int, community: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+
+    if not isTokenValid(TOKEN, username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=username, 
+            method='EnableSnmp', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+    
+    try: 
+        updateEnableSnmp(repositoriyId, community)
+
+        createLog(username=username, 
+            method='EnableSnmp', 
+            response=makeCorrectResponsePackage("update successful").__str__(),
+            )
+
+        return makeCorrectResponsePackage("update successful")
+    
+    except Exception as e:
+        createLog(username=username, 
+            method='AnalyzeConfig', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.post("getInformation")
+async def getInformation(host: HostModel, community: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    if not isTokenValid(TOKEN, host.username):
+        
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+
+        createLog(username=host.username, 
+            method='getInformation', 
+            response=makeFailResponsePackage("TOKEN invalid").__str__(),
+            )
+
+        return makeFailResponsePackage("TOKEN invalid")
+    
+    try: 
+        accessPoint = parse_model(host.AccessPoint)
+        
+        version = accessPoint.getVersion()
+        uptime = accessPoint.getUptime(community=community)
+        location = accessPoint.getLocation(community=community)
+        description = accessPoint.getDescr(community=community)
+
+        package = {
+
+            "version" : version,
+            "uptime" : uptime,
+            "location" : location,
+            "description" : description
+        }
+
+        createLog(username=host.username, 
+            method='getInformation', 
+            response=makeCorrectResponsePackage(package).__str__(),
+            )
+
+        return makeCorrectResponsePackage(package)
+    
+    except Exception as e:
+        createLog(username=host.username, 
+            method='getInformation', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
