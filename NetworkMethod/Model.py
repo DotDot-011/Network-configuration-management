@@ -28,6 +28,7 @@ class Cisco(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(CiscoCommand.showrun.value)
     
         return output
@@ -36,12 +37,14 @@ class Cisco(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(CiscoCommand.copy_run_to_start.value)
 
 class Huawei(AccessPointModel):
@@ -50,6 +53,7 @@ class Huawei(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(HuaweiCommand.showrun.value)
     
         return output
@@ -58,12 +62,14 @@ class Huawei(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(HuaweiCommand.copy_run_to_start.value)
 
 class Dell(AccessPointModel):
@@ -72,6 +78,7 @@ class Dell(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(DellCommand.showrun.value)
     
         return output
@@ -80,12 +87,14 @@ class Dell(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(DellCommand.copy_run_to_start.value)
 
 class Zyxel(AccessPointModel):
@@ -94,6 +103,7 @@ class Zyxel(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(ZyxelCommand.showrun.value)
     
         return output
@@ -102,10 +112,12 @@ class Zyxel(AccessPointModel):
 
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_config_set(commands)
 
     def CopyRunToStartup(self):
     
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
+            net_connect.enable()
             output = net_connect.send_command(ZyxelCommand.copy_run_to_start.value)

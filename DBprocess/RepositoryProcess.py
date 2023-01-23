@@ -29,7 +29,7 @@ def insertRepository(RepoInfo: RepositoryInfoModel):
 
     try:
         sql = f'''
-        INSERT INTO {TableName} (repositoryName, repositoryOwnerName, repositoryHost, repositoryDeviceType, repositoryTimestamp)
+        INSERT INTO {TableName} (repositoryName, repositoryOwnerName, repositoryHost, repositoryDeviceType, repositoryTimestamp, IsSnmpEnable)
         VALUES (%s, %s, %s, %s, now())
         '''
         
@@ -39,6 +39,7 @@ def insertRepository(RepoInfo: RepositoryInfoModel):
                                         RepoInfo.username,
                                         RepoInfo.Host,
                                         RepoInfo.DeviceType.value,
+                                        0
                                       )
                                      )
 
@@ -73,4 +74,34 @@ def queryRepositories(username: str):
         engine.close()
         logging.info(e)
 
+        raise e
+
+def updateEnableSnmp(repositoryId: int, snmpCommunity: str):
+    
+    engine = mysql.connector.connect(
+    **connectionConfig)
+    TableName = 'Repository'
+
+    try:
+        sql = f'''
+        UPDATE {TableName}
+        SET SnmpCommunity = %s, IsSnmpEnable = %s
+        WHERE repositoryId = %s;
+        '''
+        
+        rs = engine.cursor().execute(sql,
+                                     (
+                                        snmpCommunity,
+                                        1,
+                                        repositoryId
+                                      )
+                                     )
+
+        engine.commit()
+        engine.close()
+
+    except Exception as e:
+        engine.close()
+        logging.info(e)
+        
         raise e

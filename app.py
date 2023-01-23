@@ -15,13 +15,15 @@ from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage,
 import logging
 import jwt
 import datetime
+from ccat import AnalyzeFile
 
 app = FastAPI()
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    filename='Server.log'
 )
 
 origins = [
@@ -249,7 +251,7 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
         response.status_code = status.HTTP_401_UNAUTHORIZED
 
         createLog(username=hostObject.username, 
-            method='getConfig', 
+            method='uploadConfig', 
             response=makeFailResponsePackage("TOKEN invalid").__str__(),
             )
 
@@ -445,6 +447,27 @@ async def getRepositories(username: str, response: Response, TOKEN: Union[str, N
     except Exception as e:
         createLog(username=username, 
             method='getRepositories', 
+            response=makeFailResponsePackage(e.__str__()).__str__(),
+            )
+
+        return makeFailResponsePackage(e.__str__())
+
+@app.post("/AnalyzeConfig")
+async def AnalyzeConfig(username: str, config: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+    
+    try: 
+        Repositories = queryRepositories(username)
+
+        createLog(username=username, 
+            method='AnalyzeConfig', 
+            response=makeCorrectResponsePackage(Repositories).__str__(),
+            )
+
+        return makeCorrectResponsePackage(AnalyzeFile(config))
+    
+    except Exception as e:
+        createLog(username=username, 
+            method='AnalyzeConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 

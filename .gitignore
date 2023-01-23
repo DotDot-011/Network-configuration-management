@@ -137,3 +137,12 @@ Dell_list.txt
 AllFile
 
 mariadb
+
+__pycache__
+example/*.conf
+out.txt
+out.html
+dumped_usernames.txt
+dumped_passwords.txt
+dumped_hashes_m500.txt
+dumped_hashes_m5700.txt
