@@ -21,6 +21,12 @@ class UserInfoModel(BaseModel):
     username : str
     Password : str
 
+class EnableSnmpModel(BaseModel):
+    AccessPoint : AccessPointModel
+    username : str
+    Repository : int
+    community : str
+
 class RepositoryInfoModel(BaseModel):
 
     repositoryName : str

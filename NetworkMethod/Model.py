@@ -4,6 +4,10 @@ from NetworkMethod.Command import CiscoCommand, DellCommand, HuaweiCommand, Zyxe
 from netmiko import ConnectHandler
 from netmiko.zyxel import ZyxelSSH
 from pysnmp.hlapi import *
+import logging
+
+logging.basicConfig(filename='netmiko_global.log', level=logging.DEBUG)
+logger = logging.getLogger("netmiko")
 
 class AccessPointModel(BaseModel):
 
@@ -16,7 +20,7 @@ class AccessPointModel(BaseModel):
 
     def __parse_to_device__(self):
         device = self.__dict__
-        device['device_type'] = device['device_type'].value
+        device['device_type'] = self.device_type
         return device
 
     def getDescr(self, community: str):
@@ -40,7 +44,7 @@ class AccessPointModel(BaseModel):
 
         else:
             for varBind in varBinds:
-                return varBind[1]
+                return str(varBind[1])
 
     def getUptime(self, community: str):
         
@@ -63,7 +67,7 @@ class AccessPointModel(BaseModel):
 
         else:
             for varBind in varBinds:
-                return varBind[1]
+                return int(varBind[1])
 
     def getLocation(self, community: str):
         
@@ -86,7 +90,7 @@ class AccessPointModel(BaseModel):
 
         else:
             for varBind in varBinds:
-                return varBind[1]
+                return str(varBind[1])
 
 class Cisco(AccessPointModel):
 
@@ -115,14 +119,16 @@ class Cisco(AccessPointModel):
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
             net_connect.enable()
-            output = net_connect.send_command(CiscoCommand.copy_run_to_start.value)
+            output = net_connect.save_config()
     
     def EnableSnmp(self, community: str):
         
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
             net_connect.config_mode()
-            output = net_connect.send_command(f'snmp-server {community} public RO')
+            output = net_connect.send_command(f'snmp-server community {community} RO')
+
+        return output
     
     def getVersion(self):
 
@@ -155,7 +161,7 @@ class Huawei(AccessPointModel):
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
             net_connect.enable()
-            output = net_connect.send_command(HuaweiCommand.copy_run_to_start.value)
+            output = net_connect.save_config()
 
 class Dell(AccessPointModel):
     
@@ -180,7 +186,7 @@ class Dell(AccessPointModel):
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
             net_connect.enable()
-            output = net_connect.send_command(DellCommand.copy_run_to_start.value)
+            output = net_connect.save_config()
 
 class Zyxel(AccessPointModel):
     
@@ -205,4 +211,4 @@ class Zyxel(AccessPointModel):
         device = self.__parse_to_device__()
         with ConnectHandler(**device) as net_connect:
             net_connect.enable()
-            output = net_connect.send_command(ZyxelCommand.copy_run_to_start.value)
+            output = net_connect.save_config()

@@ -30,7 +30,7 @@ def insertRepository(RepoInfo: RepositoryInfoModel):
     try:
         sql = f'''
         INSERT INTO {TableName} (repositoryName, repositoryOwnerName, repositoryHost, repositoryDeviceType, repositoryTimestamp, IsSnmpEnable)
-        VALUES (%s, %s, %s, %s, now())
+        VALUES (%s, %s, %s, %s, now(), %s)
         '''
         
         rs = engine.cursor().execute(sql,

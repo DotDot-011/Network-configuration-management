@@ -10,7 +10,7 @@ from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getU
 from DBprocess.RepositoryProcess import insertRepository, queryRepositories, updateEnableSnmp
 from DBprocess.LogProcess import createLog
 from DBprocess.FileProcess import uploadFile, listFileName, queryFile
-from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel
+from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel, EnableSnmpModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText, textToCommands
 import logging
 import jwt
@@ -267,20 +267,14 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
         accessPoint.UploadConfig(commands)
         accessPoint.CopyRunToStartup()
 
-        try: 
+        uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
 
-            uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
-
-        except Exception as e:
-            
-            accessPoint.UploadConfig(oldCommands)
-            accessPoint.CopyRunToStartup()
-            
-            raise e
         
         return makeCorrectResponsePackage("upload complete")
 
     except Exception as e:
+        accessPoint.UploadConfig(oldCommands)
+        accessPoint.CopyRunToStartup()
         createLog(username=hostObject.username, 
             method='getConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
@@ -476,14 +470,14 @@ async def AnalyzeConfig(username: str, config: str, response: Response, TOKEN: U
 
         return makeFailResponsePackage(e.__str__())
 
-@app.put("/EnableSnmp")
-async def EnableSnmp(username: str, repositoriyId: int, community: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+@app.post("/EnableSnmp")
+async def EnableSnmp(host: EnableSnmpModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
 
-    if not isTokenValid(TOKEN, username):
+    if not isTokenValid(TOKEN, host.username):
         
         response.status_code = status.HTTP_401_UNAUTHORIZED
 
-        createLog(username=username, 
+        createLog(username=host.username, 
             method='EnableSnmp', 
             response=makeFailResponsePackage("TOKEN invalid").__str__(),
             )
@@ -491,9 +485,23 @@ async def EnableSnmp(username: str, repositoriyId: int, community: str, response
         return makeFailResponsePackage("TOKEN invalid")
     
     try: 
-        updateEnableSnmp(repositoriyId, community)
+        accessPoint = parse_model(host.AccessPoint)
+        oldConfig = accessPoint.GetConfig()
+        oldCommands = textToCommands(oldConfig)
 
-        createLog(username=username, 
+        output = accessPoint.EnableSnmp(community=host.community)
+        nowConfig = accessPoint.GetConfig()  
+        print(nowConfig)
+        accessPoint.CopyRunToStartup()
+        uploadFile(fileName="EnableSnmp", userName=host.username, data=nowConfig, fileType=host.AccessPoint.device_type, fileRepositoryId=host.Repository)
+
+        if("Invalid" in output):
+            raise SyntaxError
+
+        
+        updateEnableSnmp(host.Repository, host.community)
+
+        createLog(username=host.username, 
             method='EnableSnmp', 
             response=makeCorrectResponsePackage("update successful").__str__(),
             )
@@ -501,16 +509,20 @@ async def EnableSnmp(username: str, repositoriyId: int, community: str, response
         return makeCorrectResponsePackage("update successful")
     
     except Exception as e:
-        createLog(username=username, 
+        accessPoint.UploadConfig(oldCommands)
+        accessPoint.CopyRunToStartup()
+        createLog(username=host.username, 
             method='AnalyzeConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
         return makeFailResponsePackage(e.__str__())
 
-@app.post("getInformation")
-async def getInformation(host: HostModel, community: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+@app.post("/getInformation")
+async def getInformation(host: EnableSnmpModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
     
+    print(host)
+
     if not isTokenValid(TOKEN, host.username):
         
         response.status_code = status.HTTP_401_UNAUTHORIZED
@@ -525,14 +537,12 @@ async def getInformation(host: HostModel, community: str, response: Response, TO
     try: 
         accessPoint = parse_model(host.AccessPoint)
         
-        version = accessPoint.getVersion()
-        uptime = accessPoint.getUptime(community=community)
-        location = accessPoint.getLocation(community=community)
-        description = accessPoint.getDescr(community=community)
+        uptime = accessPoint.getUptime(community=host.community)
+        location = accessPoint.getLocation(community=host.community)
+        description = accessPoint.getDescr(community=host.community)
 
         package = {
 
-            "version" : version,
             "uptime" : uptime,
             "location" : location,
             "description" : description
