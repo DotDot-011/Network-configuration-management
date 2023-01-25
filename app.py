@@ -10,7 +10,7 @@ from DBprocess.UserProcess import IsUsernameExist, createUser, updateToken, getU
 from DBprocess.RepositoryProcess import insertRepository, queryRepositories, updateEnableSnmp
 from DBprocess.LogProcess import createLog
 from DBprocess.FileProcess import uploadFile, listFileName, queryFile
-from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel, EnableSnmpModel
+from utils.RequestModel import HostModel, UserInfoModel, RepositoryInfoModel, FileModel, EnableSnmpModel, AnalyzeModel
 from utils.Convertor import makeCorrectResponsePackage, makeFailResponsePackage, hashText, textToCommands
 import logging
 import jwt
@@ -450,20 +450,20 @@ async def getRepositories(username: str, response: Response, TOKEN: Union[str, N
         return makeFailResponsePackage(e.__str__())
 
 @app.post("/AnalyzeConfig")
-async def AnalyzeConfig(username: str, config: str, response: Response, TOKEN: Union[str, None] = Header(default=None)):
+async def AnalyzeConfig(request: AnalyzeModel, response: Response, TOKEN: Union[str, None] = Header(default=None)):
     
     try: 
-        Repositories = queryRepositories(username)
+        Repositories = queryRepositories(request.username)
 
-        createLog(username=username, 
+        createLog(username=request.username, 
             method='AnalyzeConfig', 
             response=makeCorrectResponsePackage(Repositories).__str__(),
             )
 
-        return makeCorrectResponsePackage(AnalyzeFile(config))
+        return makeCorrectResponsePackage(AnalyzeFile(request.config))
     
     except Exception as e:
-        createLog(username=username, 
+        createLog(username=request.username, 
             method='AnalyzeConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )

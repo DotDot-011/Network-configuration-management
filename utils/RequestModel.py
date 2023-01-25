@@ -33,3 +33,8 @@ class RepositoryInfoModel(BaseModel):
     username : str
     Host : str
     DeviceType : AvailableDevice
+
+class AnalyzeModel(BaseModel):
+    
+    username : str
+    config : str
