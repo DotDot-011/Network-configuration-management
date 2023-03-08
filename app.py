@@ -188,6 +188,7 @@ async def getFile(username: str, fileId: int, response: Response, TOKEN: Union[s
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
         return makeFailResponsePackage(e.__str__())
 
 @app.get("/getFileNames/{username}/{repository}")
@@ -214,6 +215,8 @@ async def getFileNames(username: str, repository: str, response: Response, TOKEN
             method='getFileNames', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+    
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
@@ -242,6 +245,8 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
+
         return makeFailResponsePackage(e.__str__())
 
 @app.post("/uploadConfig")
@@ -266,10 +271,10 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
         commands = textToCommands(file.data)
         accessPoint.UploadConfig(commands)
         accessPoint.CopyRunToStartup()
+        newConfig = accessPoint.GetConfig()
 
-        uploadFile(fileName=file.name, userName=hostObject.username, data=file.data, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
+        uploadFile(fileName=file.name, userName=hostObject.username, data=newConfig, fileType=hostObject.AccessPoint.device_type, fileRepositoryId=hostObject.Repository)
 
-        
         return makeCorrectResponsePackage("upload complete")
 
     except Exception as e:
@@ -279,6 +284,8 @@ async def uploadConfig(file: FileModel, hostObject: HostModel, response: Respons
             method='getConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+        
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
@@ -308,6 +315,8 @@ async def getConfig(hostObject: HostModel, response: Response, TOKEN: Union[str,
             method='getConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
@@ -339,6 +348,8 @@ async def register(userInfo : UserInfoModel, response: Response):
             method='register', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__()) 
     
@@ -383,6 +394,8 @@ async def login(userInfo : UserInfoModel, response: Response):
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
+
         return makeFailResponsePackage(e.__str__()) 
 
 @app.post("/createRepository")
@@ -414,6 +427,8 @@ async def createRepository(RepoInfo: RepositoryInfoModel, response: Response, TO
             method='createRepository', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+        
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
@@ -447,6 +462,8 @@ async def getRepositories(username: str, response: Response, TOKEN: Union[str, N
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
+
         return makeFailResponsePackage(e.__str__())
 
 @app.post("/AnalyzeConfig")
@@ -467,6 +484,8 @@ async def AnalyzeConfig(request: AnalyzeModel, response: Response, TOKEN: Union[
             method='AnalyzeConfig', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
@@ -516,6 +535,8 @@ async def EnableSnmp(host: EnableSnmpModel, response: Response, TOKEN: Union[str
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
 
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
+
         return makeFailResponsePackage(e.__str__())
 
 @app.post("/getInformation")
@@ -560,6 +581,8 @@ async def getInformation(host: EnableSnmpModel, response: Response, TOKEN: Union
             method='getInformation', 
             response=makeFailResponsePackage(e.__str__()).__str__(),
             )
+
+        response.status_code = status.HTTP_406_NOT_ACCEPTABLE
 
         return makeFailResponsePackage(e.__str__())
 
